@@ -2,7 +2,6 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <iomanip>
 #include <ctime> 
 #include "RSJparser.tcc"
 #include <sstream>
@@ -14,19 +13,18 @@
 
 using namespace std;
 
-//_CRT_SECURE_NO_WARNINGS;
-// trza wziąc pod uwage zmianę czasu na zimowy 
+// trza wziąc pod uwage zmianę czasu na zimowy, ale to już powinien system załatwić, kiedy jest podłączony do internetu
 
-
-
+/*Struktura godziny i minuty danego dzwonka, oraz obliczona z tego godzina w sekundach od północy*/
 struct bellRingTime{
     int hour, min;
     int inSeconds;
 };
-//int inSecondsToday[22], inSecondsTomorrow[22];
 
+/*Lista dzwonków dzisiejszych i jutrzejszych*/
 vector<bellRingTime>bellsListToday;
 vector<bellRingTime>bellsListTomorrow;
+/*Bufor do wczytania JSON'a*/
 stringstream buffer;
 
 void ring() {
@@ -45,41 +43,32 @@ void displayVectors() {
 
     cout << "Dzien dzisiejszy" << endl;
     for (int i = 0; i < bellsListToday.size(); i++) {
-        cout << bellsListToday[i].hour << " " << bellsListToday[i].min << " " << bellsListToday[i].inSeconds << endl;
+        cout << "Dzwonek nr " << i + 1 << " \t " << bellsListToday[i].hour << ":" << bellsListToday[i].min << "\t  oraz w sekundach: \t" << bellsListToday[i].inSeconds << "s" << endl;
     }
 
     cout << "Dzien jutrzejszy" << endl;
 
     for (int i = 0; i < bellsListTomorrow.size(); i++) {
-        cout << bellsListTomorrow[i].hour << " " << bellsListTomorrow[i].min << " " << bellsListToday[i].inSeconds << endl;
+        cout << "Dzwonek nr " << i+1 << " \t " << bellsListTomorrow[i].hour << ":" << bellsListTomorrow[i].min << "\t  oraz w sekundach: \t " << bellsListToday[i].inSeconds << "s" << endl;
     }
 }
 
-
+/*Propotyp sprawdzania z listy dzwonków czy jest już ta godzina, o której ma dzwonić*/
 void checkTime_andRingTime() {
-
-  /*  time_t godzina = time(0);
-    tm data;
-    localtime_s(&data, &godzina);
-    cout << data.tm_hour << ":" << data.tm_min << ":" << data.tm_sec << endl;*/
-
+    /*Pobranie czasu systemowego od północy do aktualnej godziny*/
     time_t stamp = time(NULL);
-    struct tm* diferencia = localtime(&stamp);
-    int secondsFromMidnight = ((diferencia->tm_hour * 3600) + (diferencia->tm_min * 60) + (diferencia->tm_sec));
-   // cout << secondsFromMidnight << endl;
+    struct tm  diferencia;
+    localtime_s(&diferencia, &stamp);
+    int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
+    cout << secondsFromMidnight << endl;
 
-    //if (find(bellsListToday.begin(), bellsListToday.end(), secondsFromMidnight) != bellsListToday.end()) {
-    //    cout << "Dzyn dzyn dzwonek wstawac" << endl;
-    //}
-    
-  
+    /*Przeszukaj w wektorze z dzwonkami godziny które pasują do aktualnej*/ 
     auto found = [secondsFromMidnight](const bellRingTime& item) {
         return item.inSeconds == secondsFromMidnight;
     };
     if (find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
         //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
         ring();
-
 }
 
 
@@ -89,17 +78,17 @@ void loadRingsFromBuffer() {
     /*Załaduj dzisiejsze i jutrzejsze dzwonki*/
     for (int i = 0; i < JSON["bells"][0].size(); i++) {
         bellRingTime hourMinSecToday;
-        hourMinSecToday.hour = JSON["bells"][0][i][0].as<int>();
+        hourMinSecToday.hour = JSON["bells"][0][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień 
         hourMinSecToday.min = JSON["bells"][0][i][1].as<int>();
-        hourMinSecToday.inSeconds = (hourMinSecToday.hour * 3600) + (hourMinSecToday.min * 60);
-        bellsListToday.push_back(hourMinSecToday);
+        hourMinSecToday.inSeconds = (hourMinSecToday.hour * 3600) + (hourMinSecToday.min * 60); //Zamień na sekundy od północy 
+        bellsListToday.push_back(hourMinSecToday); // Dodaj do wektora dzwonków
     }
     for (int i = 0; i < JSON["bells"][1].size(); i++) {
         bellRingTime hourMinSecTommorrow;
-        hourMinSecTommorrow.hour = JSON["bells"][1][i][0].as<int>();
+        hourMinSecTommorrow.hour = JSON["bells"][1][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień
         hourMinSecTommorrow.min = JSON["bells"][1][i][1].as<int>();
-        hourMinSecTommorrow.inSeconds = (hourMinSecTommorrow.hour * 3600) + (hourMinSecTommorrow.min * 60);
-        bellsListTomorrow.push_back(hourMinSecTommorrow);
+        hourMinSecTommorrow.inSeconds = (hourMinSecTommorrow.hour * 3600) + (hourMinSecTommorrow.min * 60); //Zamień na sekundy od północy 
+        bellsListTomorrow.push_back(hourMinSecTommorrow); // Dodaj do wektora dzwonków
     }
 
 }
