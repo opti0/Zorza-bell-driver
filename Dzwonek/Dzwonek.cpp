@@ -9,8 +9,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <algorithm>
-
+//#inlude<wiringPi.h>
 #include <Windows.h>
+
 using namespace std;
 
 //_CRT_SECURE_NO_WARNINGS;
@@ -27,6 +28,17 @@ struct bellRingTime{
 vector<bellRingTime>bellsListToday;
 vector<bellRingTime>bellsListTomorrow;
 stringstream buffer;
+
+void ring() {
+
+    /*
+    digitalWrite(0, HIGH);
+    delay(2500);
+    digitalWrite(0, LOW);
+    */
+    cout << "dzyn dzyn" << endl;
+
+}
 
 /*Funckja do debugowania (usunąć wywołanie jej gdziekolwiek przy oddawaniu)*/
 void displayVectors() {
@@ -64,9 +76,9 @@ void checkTime_andRingTime() {
     auto found = [secondsFromMidnight](const bellRingTime& item) {
         return item.inSeconds == secondsFromMidnight;
     };
-    if(find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
-  //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
-    cout << "Dzyn dzyn dzwonek wstawac" << endl;
+    if (find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
+        //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
+        ring();
 
 }
 
@@ -98,11 +110,13 @@ void loadIntoBufferString() {
 }
 
 int main()
-{   
+{
+    /*wiringPiSetup();  //for RPI GPIO
+    pinMode(0, OUTPUT);*/
     loadIntoBufferString();
     loadRingsFromBuffer();
     displayVectors();
-    for (;;) {
+    while(true) {
         Sleep(1000);
         checkTime_andRingTime();
     }
