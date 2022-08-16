@@ -67,8 +67,8 @@ void checkTime_andRingTime() {
         return item.inSeconds == secondsFromMidnight;
     };
     if (find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
-        //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
         ring();
+    //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
 }
 
 
@@ -79,14 +79,14 @@ void loadRingsFromBuffer() {
     for (int i = 0; i < JSON["bells"][0].size(); i++) {
         bellRingTime hourMinSecToday;
         hourMinSecToday.hour = JSON["bells"][0][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień 
-        hourMinSecToday.min = JSON["bells"][0][i][1].as<int>();
+        hourMinSecToday.min = JSON["bells"][0][i][1].as<int>(); //Wczytaj minutę [1][i][1] do struktury, wcześniej godzinę [1][i][0]
         hourMinSecToday.inSeconds = (hourMinSecToday.hour * 3600) + (hourMinSecToday.min * 60); //Zamień na sekundy od północy 
         bellsListToday.push_back(hourMinSecToday); // Dodaj do wektora dzwonków
     }
     for (int i = 0; i < JSON["bells"][1].size(); i++) {
         bellRingTime hourMinSecTommorrow;
         hourMinSecTommorrow.hour = JSON["bells"][1][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień
-        hourMinSecTommorrow.min = JSON["bells"][1][i][1].as<int>();
+        hourMinSecTommorrow.min = JSON["bells"][1][i][1].as<int>(); //Wczytaj minutę [1][i][1] do struktury, wcześniej godzinę [1][i][0]
         hourMinSecTommorrow.inSeconds = (hourMinSecTommorrow.hour * 3600) + (hourMinSecTommorrow.min * 60); //Zamień na sekundy od północy 
         bellsListTomorrow.push_back(hourMinSecTommorrow); // Dodaj do wektora dzwonków
     }
@@ -100,11 +100,20 @@ void loadIntoBufferString() {
 
 int main()
 {
+    /*Dodać tutaj trza będzie funkcję pobierającą z linka tego Jsona, jeśli się nie uda, działaj na lokalnym jsonie*/
+    //
+    //
+    //
+
+    /*Skonfiguruj port GPIO na wyjście */
     /*wiringPiSetup();  //for RPI GPIO
     pinMode(0, OUTPUT);*/
-    loadIntoBufferString();
-    loadRingsFromBuffer();
-    displayVectors();
+
+    loadIntoBufferString();  //Załaduj do stringa jsona
+    loadRingsFromBuffer(); // Wyłuskaj z niego listę godzin dzwonków do wektora struktur.
+   // displayVectors(); // funkcja do debugowania
+
+    /*Tutaj trzeba poprawić, bo może się stać tak, że nie zadziała o danym czasie dzwonek*/
     while(true) {
         Sleep(1000);
         checkTime_andRingTime();
