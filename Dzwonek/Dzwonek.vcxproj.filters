@@ -26,5 +26,6 @@
     <None Include="rozklad.json">
       <Filter>Pliki źródłowe</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

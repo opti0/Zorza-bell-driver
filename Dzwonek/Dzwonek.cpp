@@ -10,6 +10,7 @@
 #include <algorithm>
 //#inlude<wiringPi.h>
 #include <Windows.h>
+//#include <curl\curl.h>
 
 using namespace std;
 
@@ -17,8 +18,8 @@ using namespace std;
 
 /*Struktura godziny i minuty danego dzwonka, oraz obliczona z tego godzina w sekundach od północy*/
 struct bellRingTime{
-    int hour, min;
-    int inSeconds;
+    unsigned char hour, min;
+    unsigned long long inSeconds;
 };
 
 /*Lista dzwonków dzisiejszych i jutrzejszych*/
@@ -92,8 +93,40 @@ void loadRingsFromBuffer() {
     }
 
 }
+
+int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
+    fprintf(stderr, "Hello I am a function pointer\n");
+    int result = 0;
+    if (buffer != NULL) {
+        buffer->append(data, size * nmemb);
+        result = size * nmemb;
+    }
+    return result;
+}
+
 void loadIntoBufferString() {
     /*Wczytaj cały plik JSON do bufora jako string*/
+  /*  CURL* CURLHandle = curl_easy_init();
+    CURLcode CURLResult;
+    string JSONRaw;
+    if (CURLHandle)
+    {
+        curl_easy_setopt(CURLHandle, CURLOPT_URL, "https://zorza.lo3.wroc.pl/timetable/api/1/bell/");
+        curl_easy_setopt(CURLHandle, CURLOPT_HEADER, 0);
+        curl_easy_setopt(CURLHandle, CURLOPT_FOLLOWLOCATION, 0);
+        curl_easy_setopt(CURLHandle, CURLOPT_WRITEFUNCTION, CURLWriter);
+        curl_easy_setopt(CURLHandle, CURLOPT_WRITEDATA, &JSONRaw);
+    }
+    else
+    {
+        //Jakby coś poszło nie tak z CURLem
+    }
+
+    curl_easy_perform(CURLHandle);
+    curl_easy_cleanup(CURLHandle);
+    cout << JSONRaw << endl;
+    cin >> JSONRaw;*/
+
     ifstream t("rozklad.json");
     buffer << t.rdbuf();
 }
