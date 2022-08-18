@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <fstream>
+#include <chrono>
 #include <vector>
 #include <string>
 #include <ctime> 
@@ -7,17 +8,18 @@
 #include <sstream>
 #include <time.h>
 #include <stdio.h>
-#include <algorithm>
-#include<wiringPi.h>
+//#include <algorithm>
+#include <wiringPi.h>
 //#include <Windows.h>
 //#include <curl\curl.h>
-
+using namespace std::chrono;
 using namespace std;
 
 // trza wziąc pod uwage zmianę czasu na zimowy, ale to już powinien system załatwić, kiedy jest podłączony do internetu
 
 /*Struktura godziny i minuty danego dzwonka, oraz obliczona z tego godzina w sekundach od północy*/
-struct bellRingTime{
+class bellRingTime{
+public:
     unsigned char hour, min;
     unsigned long long inSeconds;
 };
@@ -58,17 +60,29 @@ void displayVectors() {
 void checkTime_andRingTime() {
     /*Pobranie czasu systemowego od północy do aktualnej godziny*/
     time_t stamp = time(NULL);
-    struct tm  diferencia;
-    localtime_s(&diferencia, &stamp);
+    struct tm diferencia;
+    localtime_r(&stamp, &diferencia);
     int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
     cout << secondsFromMidnight << endl;
+//	auto now = system_clock::now();
+//	auto today = floor<days>(now);
+//	auto second = duration_cast<seconds>(now-today);
+//	int secondsFromMidnight = second;
+
 
     /*Przeszukaj w wektorze z dzwonkami godziny które pasują do aktualnej*/ 
-    auto found = [secondsFromMidnight](const bellRingTime& item) {
+/*    auto found = [secondsFromMidnight](const bellRingTime& item) {
         return item.inSeconds == secondsFromMidnight;
     };
     if (find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
-        ring();
+        ring();*/
+	for(const bellRingTime &t:bellsListToday){
+		if(t.inSeconds==secondsFromMidnight){
+			ring();
+			break;
+		}
+	}
+
     //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
 }
 
@@ -139,8 +153,8 @@ int main()
     //
 
     /*Skonfiguruj port GPIO na wyjście */
-    /*wiringPiSetup();  //for RPI GPIO
-    pinMode(0, OUTPUT);*/
+    wiringPiSetup();  //for RPI GPIO
+    pinMode(0, OUTPUT);
 
     loadIntoBufferString();  //Załaduj do stringa jsona
     loadRingsFromBuffer(); // Wyłuskaj z niego listę godzin dzwonków do wektora struktur.
