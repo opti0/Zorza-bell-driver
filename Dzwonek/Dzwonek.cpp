@@ -8,8 +8,8 @@
 #include <time.h>
 #include <stdio.h>
 #include <algorithm>
-//#inlude<wiringPi.h>
-#include <Windows.h>
+#include<wiringPi.h>
+//#include <Windows.h>
 //#include <curl\curl.h>
 
 using namespace std;
@@ -30,12 +30,12 @@ stringstream buffer;
 
 void ring() {
 
-    /*
+    
     digitalWrite(0, HIGH);
     delay(2500);
     digitalWrite(0, LOW);
-    */
-    cout << "dzyn dzyn" << endl;
+    
+   // cout << "dzyn dzyn" << endl;
 
 }
 
@@ -148,7 +148,7 @@ int main()
 
     /*Tutaj trzeba poprawić, bo może się stać tak, że nie zadziała o danym czasie dzwonek*/
     while(true) {
-        Sleep(1000);
+       delay(1000);
         checkTime_andRingTime();
     }
     return 0;
