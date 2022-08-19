@@ -1,5 +1,6 @@
-﻿#include <iostream>
+#include <unistd.h>
 #include <fstream>
+#include <iostream>
 #include <chrono>
 #include <vector>
 #include <string>
@@ -11,7 +12,7 @@
 //#include <algorithm>
 #include <wiringPi.h>
 //#include <Windows.h>
-//#include <curl\curl.h>
+#include <curl/curl.h>
 using namespace std::chrono;
 using namespace std;
 
@@ -33,11 +34,11 @@ stringstream buffer;
 void ring() {
 
     
-    digitalWrite(0, HIGH);
-    delay(2500);
-    digitalWrite(0, LOW);
+    digitalWrite(4, HIGH);
+    sleep(2500);
+    digitalWrite(4, LOW);
     
-   // cout << "dzyn dzyn" << endl;
+   cout << "dzyn dzyn" << endl;
 
 }
 
@@ -154,7 +155,7 @@ int main()
 
     /*Skonfiguruj port GPIO na wyjście */
     wiringPiSetup();  //for RPI GPIO
-    pinMode(0, OUTPUT);
+    pinMode(4, OUTPUT);
 
     loadIntoBufferString();  //Załaduj do stringa jsona
     loadRingsFromBuffer(); // Wyłuskaj z niego listę godzin dzwonków do wektora struktur.
@@ -162,7 +163,7 @@ int main()
 
     /*Tutaj trzeba poprawić, bo może się stać tak, że nie zadziała o danym czasie dzwonek*/
     while(true) {
-       delay(1000);
+      sleep(1000);
         checkTime_andRingTime();
     }
     return 0;
