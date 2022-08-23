@@ -1,42 +1,41 @@
-
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <ctime> 
-#include <sstream>
+#include <ctime>
 #include <time.h>
 #include <stdio.h>
 #include "RSJparser.tcc"
-//#include <wiringPi.h>
+#include <wiringPi.h>
 //#include <curl/curl.h>
-//#include <unistd.h>
+#include <unistd.h>
 
-#include <Windows.h>
+//#include <Windows.h>
 using namespace std;
 
 void ring() {
-   //digitalWrite(4, HIGH);
-   //sleep(2500);
-   //digitalWrite(4, LOW);
-   cout << "dzyn dzyn" << endl;
+  digitalWrite(4, HIGH);
+  sleep(2);
+  digitalWrite(4, LOW);
+  cout << "dzyn dzyn" << endl;
 }
+
 /*Sprawdzanie z listy dzwonków czy jest już ta godzina, o której ma dzwonić*/
 void checkTime_andRingTime(int *secs, int size) {
 /*Pobranie czasu systemowego od północy do aktualnej godziny*/
 
     /*To działa na Linuxie (do poprawy anyways)*/
-    //time_t stamp = time(NULL);
-    //struct tm diferencia;
-    //localtime_r(&stamp, &diferencia);
-    //int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
-    //cout << secondsFromMidnight << endl;
+   time_t stamp = time(NULL);
+   struct tm diferencia;
+   localtime_r(&stamp, &diferencia);
+   int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
+   cout << secondsFromMidnight << endl;
 
     /*To działa na Windowsie*/
-    time_t stamp = time(NULL);
+    /*time_t stamp = time(NULL);
     struct tm  diferencia;
     localtime_s(&diferencia, &stamp);
     int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
-    cout << secondsFromMidnight << endl;
+    cout << secondsFromMidnight << endl;*/
 /*Sprawdzenie w tablicy sekund czy już czas dzwonić przeglądem zupełnym (jeśli zadzwoni przerwij pętlę)*/
     for (int i = 0; i < size; i++) {
         if (secondsFromMidnight == secs[i]){ ring(); break; }
@@ -53,7 +52,7 @@ void displayArrays(int *hour, int *min, int *sec, int size ) {
 }
 
 /*Załaduj do struktury poszczególne elementy i dodaj do tablic na dzwonki*/
-void loadRingsFromBuffer(stringstream &buffer, int *hour, int *min, int *seconds, int size, RSJresource JSON) {
+void loadRingsFromBuffer(string &buffer, int *hour, int *min, int *seconds, int size, RSJresource JSON) {
 
     for (int i = 0; i < size; i++) {
         
@@ -65,7 +64,7 @@ void loadRingsFromBuffer(stringstream &buffer, int *hour, int *min, int *seconds
     displayArrays(hour, min, seconds, size);
 }
 
-void loadIntoBufferString(stringstream &buffer) {
+void loadIntoBufferString(string &buffer) {
  /*Funckja wczytująca pod biblioteką <curl/curl.h> JSON'a z chmury pod linkiem*/
   /*  CURL* CURLHandle = curl_easy_init();
     CURLcode CURLResult;
@@ -89,8 +88,11 @@ void loadIntoBufferString(stringstream &buffer) {
     cin >> JSONRaw;*/
 
  /*Wczytaj cały plik JSON do bufora jako string*/
-    ifstream t("rozklad.json");
-    buffer << t.rdbuf();
+    ifstream t;
+    t.open("rozklad.json");
+    if (t.good())cout <<"chuj";
+   getline(t, buffer);
+   t.close();
 }
 
 int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
@@ -106,14 +108,21 @@ int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
 int main()
 {
     /*Skonfiguruj port GPIO na wyjście */
-    //wiringPiSetup();  //for RPI GPIO
-    //pinMode(4, OUTPUT);
-
-    stringstream buffer; //Bufor do wczytania JSON'a
+    wiringPiSetup();  //for RPI GPIO
+    pinMode(4, OUTPUT);
+	std::cout<<"test"<<endl;
+    string buffer; //Bufor do wczytania JSON'a
+    fstream plik;
+    plik.open("rozklad.json");
+    if (plik.good())
+	cout<<"Plik ok";
+    else cout<<"Plik zepsuted";
+    while(plik){plik>>buffer;}
+    plik.close();
     loadIntoBufferString(buffer);  //Załaduj do stringa jsona
-    cout << buffer.rdbuf() << endl; // Debug (usunąć)
+    cout << buffer << endl; // Debug (usunąć)
 
-    RSJresource JSON(buffer.str()); // Właduj stringa do zmiennej biblioteki "RSJparser.tcc"
+    RSJresource JSON(buffer); // Właduj stringa do zmiennej biblioteki "RSJparser.tcc"
     /*Tablice na dzisiejsze dzwonki w godzinach i minutach osobno*/
     int size = JSON["bells"][0].size();
     int* hour = new int[size];
@@ -124,7 +133,7 @@ int main()
 
     /*Tutaj trzeba poprawić, bo może się stać tak, że nie zadziała o danym czasie dzwonek*/
     while(true) {
-      Sleep(1000);
+      sleep(1);
       checkTime_andRingTime(seconds, size);
     }
     return 0;
