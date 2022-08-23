@@ -1,126 +1,71 @@
-#include <unistd.h>
-#include <fstream>
 #include <iostream>
-#include <chrono>
-#include <vector>
+#include <fstream>
 #include <string>
-#include <ctime> 
-#include "RSJparser.tcc"
-#include <sstream>
+#include <ctime>
 #include <time.h>
 #include <stdio.h>
-//#include <algorithm>
+#include "RSJparser.tcc"
 #include <wiringPi.h>
+//#include <curl/curl.h>
+#include <unistd.h>
+
 //#include <Windows.h>
-#include <curl/curl.h>
-using namespace std::chrono;
 using namespace std;
 
-// trza wziąc pod uwage zmianę czasu na zimowy, ale to już powinien system załatwić, kiedy jest podłączony do internetu
-
-/*Struktura godziny i minuty danego dzwonka, oraz obliczona z tego godzina w sekundach od północy*/
-class bellRingTime{
-public:
-    unsigned char hour, min;
-    unsigned long long inSeconds;
-};
-
-/*Lista dzwonków dzisiejszych i jutrzejszych*/
-vector<bellRingTime>bellsListToday;
-vector<bellRingTime>bellsListTomorrow;
-/*Bufor do wczytania JSON'a*/
-stringstream buffer;
-
 void ring() {
+  digitalWrite(4, HIGH);
+  sleep(2);
+  digitalWrite(4, LOW);
+  cout << "dzyn dzyn" << endl;
+}
 
-    
-    digitalWrite(4, HIGH);
-    sleep(2500);
-    digitalWrite(4, LOW);
-    
-   cout << "dzyn dzyn" << endl;
+/*Sprawdzanie z listy dzwonków czy jest już ta godzina, o której ma dzwonić*/
+void checkTime_andRingTime(int *secs, int size) {
+/*Pobranie czasu systemowego od północy do aktualnej godziny*/
 
+    /*To działa na Linuxie (do poprawy anyways)*/
+   time_t stamp = time(NULL);
+   struct tm diferencia;
+   localtime_r(&stamp, &diferencia);
+   int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
+   cout << secondsFromMidnight << endl;
+
+    /*To działa na Windowsie*/
+    /*time_t stamp = time(NULL);
+    struct tm  diferencia;
+    localtime_s(&diferencia, &stamp);
+    int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
+    cout << secondsFromMidnight << endl;*/
+/*Sprawdzenie w tablicy sekund czy już czas dzwonić przeglądem zupełnym (jeśli zadzwoni przerwij pętlę)*/
+    for (int i = 0; i < size; i++) {
+        if (secondsFromMidnight == secs[i]){ ring(); break; }
+    }
 }
 
 /*Funckja do debugowania (usunąć wywołanie jej gdziekolwiek przy oddawaniu)*/
-void displayVectors() {
+void displayArrays(int *hour, int *min, int *sec, int size ) {
 
     cout << "Dzien dzisiejszy" << endl;
-    for (int i = 0; i < bellsListToday.size(); i++) {
-        cout << "Dzwonek nr " << i + 1 << " \t " << bellsListToday[i].hour << ":" << bellsListToday[i].min << "\t  oraz w sekundach: \t" << bellsListToday[i].inSeconds << "s" << endl;
-    }
-
-    cout << "Dzien jutrzejszy" << endl;
-
-    for (int i = 0; i < bellsListTomorrow.size(); i++) {
-        cout << "Dzwonek nr " << i+1 << " \t " << bellsListTomorrow[i].hour << ":" << bellsListTomorrow[i].min << "\t  oraz w sekundach: \t " << bellsListToday[i].inSeconds << "s" << endl;
+    for (int i = 0; i < size; i++) {
+        cout << "Dzwonek nr " << i + 1 << " \t " << hour[i] << ":" << min[i] << "\t  oraz w sekundach: \t" << sec[i] << "s" << endl;
     }
 }
 
-/*Propotyp sprawdzania z listy dzwonków czy jest już ta godzina, o której ma dzwonić*/
-void checkTime_andRingTime() {
-    /*Pobranie czasu systemowego od północy do aktualnej godziny*/
-    time_t stamp = time(NULL);
-    struct tm diferencia;
-    localtime_r(&stamp, &diferencia);
-    int secondsFromMidnight = ((diferencia.tm_hour * 3600) + (diferencia.tm_min * 60) + (diferencia.tm_sec));
-    cout << secondsFromMidnight << endl;
-//	auto now = system_clock::now();
-//	auto today = floor<days>(now);
-//	auto second = duration_cast<seconds>(now-today);
-//	int secondsFromMidnight = second;
+/*Załaduj do struktury poszczególne elementy i dodaj do tablic na dzwonki*/
+void loadRingsFromBuffer(string &buffer, int *hour, int *min, int *seconds, int size, RSJresource JSON) {
 
-
-    /*Przeszukaj w wektorze z dzwonkami godziny które pasują do aktualnej*/ 
-/*    auto found = [secondsFromMidnight](const bellRingTime& item) {
-        return item.inSeconds == secondsFromMidnight;
-    };
-    if (find_if(begin(bellsListToday), end(bellsListToday), found) != end(bellsListToday))
-        ring();*/
-	for(const bellRingTime &t:bellsListToday){
-		if(t.inSeconds==secondsFromMidnight){
-			ring();
-			break;
-		}
-	}
-
-    //  vector<bellRingTime>::iterator flag = std::search(vec.begin(), vec.end(), searchlist.begin(), searchlist.end(), MatchMember);
+    for (int i = 0; i < size; i++) {
+        
+        hour[i] = JSON["bells"][0][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień 
+        min[i] = JSON["bells"][0][i][1].as<int>(); //Wczytaj minutę [1][i][1] do struktury, wcześniej godzinę [1][i][0]
+        seconds[i] = (hour[i] * 3600) + (min[i] * 60); //Zamień na sekundy od północy 
+      
+    }
+    displayArrays(hour, min, seconds, size);
 }
 
-
-/*Załaduj do struktury poszczególne elementy i dodaj do wektora przechowującego wszystkie dzwonki*/
-void loadRingsFromBuffer() {
-    RSJresource JSON(buffer.str());
-    /*Załaduj dzisiejsze i jutrzejsze dzwonki*/
-    for (int i = 0; i < JSON["bells"][0].size(); i++) {
-        bellRingTime hourMinSecToday;
-        hourMinSecToday.hour = JSON["bells"][0][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień 
-        hourMinSecToday.min = JSON["bells"][0][i][1].as<int>(); //Wczytaj minutę [1][i][1] do struktury, wcześniej godzinę [1][i][0]
-        hourMinSecToday.inSeconds = (hourMinSecToday.hour * 3600) + (hourMinSecToday.min * 60); //Zamień na sekundy od północy 
-        bellsListToday.push_back(hourMinSecToday); // Dodaj do wektora dzwonków
-    }
-    for (int i = 0; i < JSON["bells"][1].size(); i++) {
-        bellRingTime hourMinSecTommorrow;
-        hourMinSecTommorrow.hour = JSON["bells"][1][i][0].as<int>(); //Trzecia pozycja wskazuje czy chcemy minute czy godzinę, druga pozycja pokazduje którą tablicę dwuelementowa godziny i minuty chcemy (który dzwonek), pierwsza pozycja to dzień
-        hourMinSecTommorrow.min = JSON["bells"][1][i][1].as<int>(); //Wczytaj minutę [1][i][1] do struktury, wcześniej godzinę [1][i][0]
-        hourMinSecTommorrow.inSeconds = (hourMinSecTommorrow.hour * 3600) + (hourMinSecTommorrow.min * 60); //Zamień na sekundy od północy 
-        bellsListTomorrow.push_back(hourMinSecTommorrow); // Dodaj do wektora dzwonków
-    }
-
-}
-
-int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
-    fprintf(stderr, "Hello I am a function pointer\n");
-    int result = 0;
-    if (buffer != NULL) {
-        buffer->append(data, size * nmemb);
-        result = size * nmemb;
-    }
-    return result;
-}
-
-void loadIntoBufferString() {
-    /*Wczytaj cały plik JSON do bufora jako string*/
+void loadIntoBufferString(string &buffer) {
+ /*Funckja wczytująca pod biblioteką <curl/curl.h> JSON'a z chmury pod linkiem*/
   /*  CURL* CURLHandle = curl_easy_init();
     CURLcode CURLResult;
     string JSONRaw;
@@ -142,29 +87,54 @@ void loadIntoBufferString() {
     cout << JSONRaw << endl;
     cin >> JSONRaw;*/
 
-    ifstream t("rozklad.json");
-    buffer << t.rdbuf();
+ /*Wczytaj cały plik JSON do bufora jako string*/
+    ifstream t;
+    t.open("rozklad.json");
+    if (t.good())cout <<"chuj";
+   getline(t, buffer);
+   t.close();
+}
+
+int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
+    fprintf(stderr, "Hello I am a function pointer\n");
+    int result = 0;
+    if (buffer != NULL) {
+        buffer->append(data, size * nmemb);
+        result = size * nmemb;
+    }
+    return result;
 }
 
 int main()
 {
-    /*Dodać tutaj trza będzie funkcję pobierającą z linka tego Jsona, jeśli się nie uda, działaj na lokalnym jsonie*/
-    //
-    //
-    //
-
     /*Skonfiguruj port GPIO na wyjście */
     wiringPiSetup();  //for RPI GPIO
     pinMode(4, OUTPUT);
+	std::cout<<"test"<<endl;
+    string buffer; //Bufor do wczytania JSON'a
+    fstream plik;
+    plik.open("rozklad.json");
+    if (plik.good())
+	cout<<"Plik ok";
+    else cout<<"Plik zepsuted";
+    while(plik){plik>>buffer;}
+    plik.close();
+    loadIntoBufferString(buffer);  //Załaduj do stringa jsona
+    cout << buffer << endl; // Debug (usunąć)
 
-    loadIntoBufferString();  //Załaduj do stringa jsona
-    loadRingsFromBuffer(); // Wyłuskaj z niego listę godzin dzwonków do wektora struktur.
-   // displayVectors(); // funkcja do debugowania
+    RSJresource JSON(buffer); // Właduj stringa do zmiennej biblioteki "RSJparser.tcc"
+    /*Tablice na dzisiejsze dzwonki w godzinach i minutach osobno*/
+    int size = JSON["bells"][0].size();
+    int* hour = new int[size];
+    int* min = new int[size];
+    int* seconds = new int[size];
+
+    loadRingsFromBuffer(buffer, hour, min, seconds, size, JSON); // Wyłuskaj z niego listę godzin dzwonków do wektora struktur.
 
     /*Tutaj trzeba poprawić, bo może się stać tak, że nie zadziała o danym czasie dzwonek*/
     while(true) {
-      sleep(1000);
-        checkTime_andRingTime();
+      sleep(1);
+      checkTime_andRingTime(seconds, size);
     }
     return 0;
 }
