@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "RSJparser.tcc"
 #include <wiringPi.h>
-//#include <curl/curl.h>
+#include <curl/curl.h>
 #include <unistd.h>
 
 //#include <Windows.h>
@@ -63,10 +63,10 @@ void loadRingsFromBuffer(string &buffer, int *hour, int *min, int *seconds, int 
     }
     displayArrays(hour, min, seconds, size);
 }
-
+int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer);
 void loadIntoBufferString(string &buffer) {
  /*Funckja wczytująca pod biblioteką <curl/curl.h> JSON'a z chmury pod linkiem*/
-  /*  CURL* CURLHandle = curl_easy_init();
+    CURL* CURLHandle = curl_easy_init();
     CURLcode CURLResult;
     string JSONRaw;
     if (CURLHandle)
@@ -79,21 +79,16 @@ void loadIntoBufferString(string &buffer) {
     }
     else
     {
-        //Jakby coś poszło nie tak z CURLem
+        cout << " Błąd pobrania jsona" << endl;
     }
 
     curl_easy_perform(CURLHandle);
     curl_easy_cleanup(CURLHandle);
-    cout << JSONRaw << endl;
-    cin >> JSONRaw;*/
+   cout << JSONRaw << endl;
+   // cin >> JSONRaw;
 
  /*Wczytaj cały plik JSON do bufora jako string*/
-    ifstream t;
-    t.open("rozklad.json");
-    if (t.good())cout <<"chuj";
-   getline(t, buffer);
-   t.close();
-}
+    }
 
 int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
     fprintf(stderr, "Hello I am a function pointer\n");
@@ -107,7 +102,7 @@ int CURLWriter(char* data, size_t size, size_t nmemb, string* buffer) {
 
 int main()
 {
-    /*Skonfiguruj port GPIO na wyjście */
+     /*Skonfiguruj port GPIO na wyjście */
     wiringPiSetup();  //for RPI GPIO
     pinMode(4, OUTPUT);
 	std::cout<<"test"<<endl;

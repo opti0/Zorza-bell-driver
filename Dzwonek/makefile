@@ -1,2 +1,2 @@
 Dzwonek:
-	g++ Dzwonek.cpp -g -std=c++14 -o Dzwonek -lwiringPi -lcurl
+	g++ Dzwonek.cpp -g -std=c++11 -o Dzwonek -lwiringPi -lcurl
